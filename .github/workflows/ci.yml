@@ -7,6 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
+  # 1. Fase de Integración Continua (CI)
   build-test:
     runs-on: ubuntu-latest
 
@@ -14,12 +15,59 @@ jobs:
       - name: Clonar repositorio
         uses: actions/checkout@v4
 
-      - name: Configurar JDK 17
+      - name: Configurar Java 17 (Amazon Corretto)
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: "17"
+          distribution: 'corretto'
+          java-version: '17'
           cache: maven
 
       - name: Compilar y ejecutar tests con Maven Wrapper
         run: ./mvnw -B clean test
+
+        # 2. Fase de Despliegue Continuo (CD)
+#        deploy:
+#          name: Despliegue a AWS Elastic Beanstalk
+#          needs: build-and-test  # <--- Solo se ejecuta si los tests pasan
+#          if: github.event_name == 'push' && github.ref == 'refs/heads/main' # <--- Asegura que el despliegue a AWS solo ocurra cuando los cambios lleguen a main
+#          runs-on: ubuntu-latest
+#
+#          steps:
+#            - name: Clonar repositorio
+#              uses: actions/checkout@v4
+#
+#            - name: Configurar Java 17 (Amazon Corretto)
+#              uses: actions/setup-java@v4
+#              with:
+#                distribution: 'corretto'
+#                java-version: '17'
+#
+#            - name: Construir paquete JAR
+#              run: ./mvnw -B package -DskipTests
+#
+#            - name: Preparar artefacto ZIP para AWS
+#              run: |
+#                mkdir deploy
+#                cp target/*.jar deploy/app.jar
+#                cp Procfile deploy/Procfile
+#                cd deploy
+#                zip -r ../deploy.zip .
+#
+#            - name: Configurar credenciales de AWS
+#              uses: aws-actions/configure-aws-credentials@v4
+#              with:
+#                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#                aws-region: us-east-1
+#
+#            - name: Desplegar en Elastic Beanstalk
+#              uses: einaregilsson/beanstalk-deploy@v22
+#              with:
+#                aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#                aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#                application_name: dam-ci-cd-api-001
+#                environment_name: Dam-ci-cd-api-001-env
+#                region: us-east-1
+#                version_label: v-${{ github.run_id }}
+#                deployment_package: deploy.zip
+#                wait_for_environment_recovery: true
